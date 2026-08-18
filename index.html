@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riemann Sums - Visual Math</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #60a5fa;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Glassmorphism Sidebar */
+        .sidebar {
+            width: 360px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            z-index: 10;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        /* Method Toggle */
+        .toggle-group {
+            display: flex;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .toggle-btn {
+            flex: 1;
+            padding: 0.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .toggle-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Readouts */
+        .stats-panel {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-top: auto;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+        .stat-row:last-child {
+            margin-bottom: 0;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        .stat-label {
+            color: var(--text-muted);
+        }
+        .stat-value {
+            font-weight: 700;
+            font-size: 1rem;
+            font-variant-numeric: tabular-nums;
+        }
+        .value-exact { color: var(--accent-hover); }
+        .value-calc { color: var(--success); }
+        .value-error { color: var(--danger); font-size: 1.25rem; }
+
+        .aha-moment {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger);
+            border-radius: 0 8px 8px 0;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: #fca5a5;
+        }
+
+        /* Canvas Area */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h1>Riemann Sums</h1>
+        <p class="subtitle">Visualizing the limit of finite approximations converging to an exact integral.</p>
+
+        <div class="control-group">
+            <label>
+                <span>Number of Rectangles (N)</span>
+                <span id="n-val">5</span>
+            </label>
+            <input type="range" id="n-slider" min="1" max="150" value="5">
+        </div>
+
+        <div class="control-group">
+            <label>Approximation Method</label>
+            <div class="toggle-group" id="method-toggles">
+                <button class="toggle-btn active" data-method="left">Left</button>
+                <button class="toggle-btn" data-method="mid">Midpoint</button>
+                <button class="toggle-btn" data-method="right">Right</button>
+            </div>
+        </div>
+
+        <div class="aha-moment">
+            <strong>The Aha! Moment:</strong> 
+            Watch the <span style="color: #ef4444; font-weight: bold;">red error area</span>. As N increases toward infinity, the gaps between the rectangles and the true curve shrink to exactly zero.
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-row">
+                <span class="stat-label">Exact Integral Area</span>
+                <span class="stat-value value-exact" id="exact-area">100.00</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Estimated Area</span>
+                <span class="stat-value value-calc" id="calc-area">0.00</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Absolute Error</span>
+                <span class="stat-value value-error" id="error-val">0.00</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="canvas-container">
+        <canvas id="simCanvas"></canvas>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const nSlider = document.getElementById('n-slider');
+        const nValDisplay = document.getElementById('n-val');
+        const methodBtns = document.querySelectorAll('.toggle-btn');
+        const exactDisplay = document.getElementById('exact-area');
+        const calcDisplay = document.getElementById('calc-area');
+        const errorDisplay = document.getElementById('error-val');
+
+        // State
+        let N = parseInt(nSlider.value);
+        let method = 'left'; // left, mid, right
+        
+        // Math definitions
+        const a = 0;
+        const b = 10;
+        const exactArea = 100;
+        
+        function f(x) {
+            return -0.3 * x * x + 3 * x + 5;
+        }
+
+        // Viewport mapping mapping [xMin, xMax] x [yMin, yMax] to canvas
+        const xMin = -1, xMax = 11;
+        const yMin = -2, yMax = 15;
+        
+        let width, height;
+
+        function resize() {
+            width = canvas.parentElement.clientWidth;
+            height = canvas.parentElement.clientHeight;
+            // Handle high DPI displays
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+            draw();
+        }
+
+        window.addEventListener('resize', resize);
+
+        function mapX(x) {
+            return (x - xMin) / (xMax - xMin) * width;
+        }
+
+        function mapY(y) {
+            return height - ((y - yMin) / (yMax - yMin) * height);
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            
+            // vertical lines
+            for (let i = Math.ceil(xMin); i <= Math.floor(xMax); i++) {
+                ctx.beginPath();
+                ctx.moveTo(mapX(i), 0);
+                ctx.lineTo(mapX(i), height);
+                ctx.stroke();
+            }
+            // horizontal lines
+            for (let i = Math.ceil(yMin); i <= Math.floor(yMax); i+=2) {
+                ctx.beginPath();
+                ctx.moveTo(0, mapY(i));
+                ctx.lineTo(width, mapY(i));
+                ctx.stroke();
+            }
+            
+            // Axes
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            // X axis
+            ctx.beginPath();
+            ctx.moveTo(0, mapY(0));
+            ctx.lineTo(width, mapY(0));
+            ctx.stroke();
+            // Y axis
+            ctx.beginPath();
+            ctx.moveTo(mapX(0), 0);
+            ctx.lineTo(mapX(0), height);
+            ctx.stroke();
+            
+            // Labels
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '12px Inter';
+            ctx.fillText('0', mapX(0) - 15, mapY(0) + 15);
+            ctx.fillText('10', mapX(10) - 5, mapY(0) + 15);
+        }
+
+        function drawCurve() {
+            ctx.beginPath();
+            ctx.moveTo(mapX(xMin), mapY(f(xMin)));
+            for (let x = xMin; x <= xMax; x += 0.05) {
+                ctx.lineTo(mapX(x), mapY(f(x)));
+            }
+            
+            ctx.strokeStyle = '#60a5fa'; // Blue accent
+            ctx.lineWidth = 3;
+            // glow
+            ctx.shadowColor = '#60a5fa';
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            
+            // reset glow
+            ctx.shadowBlur = 0;
+            
+            // Fill true area lightly
+            ctx.beginPath();
+            ctx.moveTo(mapX(a), mapY(0));
+            for (let x = a; x <= b; x += 0.05) {
+                ctx.lineTo(mapX(x), mapY(f(x)));
+            }
+            ctx.lineTo(mapX(b), mapY(0));
+            ctx.fillStyle = 'rgba(96, 165, 250, 0.1)';
+            ctx.fill();
+        }
+
+        function drawRectsAndError() {
+            let estimated = 0;
+            const dx = (b - a) / N;
+
+            for (let i = 0; i < N; i++) {
+                let x_start = a + i * dx;
+                let x_end = a + (i + 1) * dx;
+                let h;
+                
+                if (method === 'left') h = f(x_start);
+                else if (method === 'right') h = f(x_end);
+                else h = f(x_start + dx / 2); // mid
+                
+                estimated += h * dx;
+
+                // Draw Rect
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.25)'; // Emerald green
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+                ctx.lineWidth = 1;
+                
+                let rx = mapX(x_start);
+                let ry = mapY(h);
+                let rw = mapX(x_end) - mapX(x_start);
+                let rh = mapY(0) - mapY(h);
+                
+                ctx.beginPath();
+                ctx.rect(rx, ry, rw, rh);
+                ctx.fill();
+                ctx.stroke();
+                
+                // Draw Error Highlight (Red)
+                // The error region is bounded by y = h and y = f(x)
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; // Red
+                ctx.beginPath();
+                ctx.moveTo(mapX(x_start), mapY(h));
+                ctx.lineTo(mapX(x_end), mapY(h));
+                
+                // Trace curve backwards to close the shape accurately
+                // use small steps to approximate the curve
+                for (let x = x_end; x >= x_start; x -= dx/20) {
+                    ctx.lineTo(mapX(x), mapY(f(x)));
+                }
+                ctx.lineTo(mapX(x_start), mapY(f(x_start)));
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            return estimated;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            
+            drawGrid();
+            drawCurve();
+            const est = drawRectsAndError();
+            
+            // Re-draw curve on top so it isn't completely hidden by error red
+            ctx.beginPath();
+            ctx.moveTo(mapX(xMin), mapY(f(xMin)));
+            for (let x = xMin; x <= xMax; x += 0.05) {
+                ctx.lineTo(mapX(x), mapY(f(x)));
+            }
+            ctx.strokeStyle = '#60a5fa';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Update DOM readouts
+            calcDisplay.innerText = est.toFixed(2);
+            exactDisplay.innerText = exactArea.toFixed(2);
+            const error = Math.abs(exactArea - est);
+            errorDisplay.innerText = error.toFixed(2);
+        }
+
+        // Event Listeners
+        nSlider.addEventListener('input', (e) => {
+            N = parseInt(e.target.value);
+            nValDisplay.innerText = N;
+            requestAnimationFrame(draw);
+        });
+
+        methodBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                methodBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                method = e.target.getAttribute('data-method');
+                requestAnimationFrame(draw);
+            });
+        });
+
+        // Initialize
+        resize();
+        
+    </script>
+</body>
+</html>
